@@ -33,7 +33,7 @@ pipeline {
                 }
             }
         }
-
+    }
         stage ('Push repository') {
             // set server ip from credentials.
             environment {
