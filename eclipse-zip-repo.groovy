@@ -5,7 +5,7 @@ pipeline {
 
     // set eclipse locating and temp folder for repository
     environment {
-        dest = 'file:///$WORKSPACE/tmp/$repoName/'
+        dest = '$WORKSPACE/tmp/$repoName/'
     }
 
     // basic parameters
@@ -23,34 +23,36 @@ pipeline {
             steps ('download mirror') {
                 script {
                     sh """
-                    wget -O repo.zip -P $dest $source
-                    cd tmp
+                    mkdir -p tmp/$repoName
+                    wget -O repo.zip $source
+                    mv repo.zip tmp/$repoName
+                    cd tmp/$repoName
                     unzip repo.zip
-                    rm repo.zip 
+                    rm -rf repo.zip 
                     """
                 }
             }
         }
 
-        // stage ('Push repository') {
-        //     // set server ip from credentials.
-        //     environment {
-        //         destServer = credentials('serverIp')
-        //     }
+        stage ('Push repository') {
+            // set server ip from credentials.
+            environment {
+                destServer = credentials('serverIp')
+            }
 
-        //     // steps ('Upload repository to server and clear tmp folder.') {
-        //     //     script {
-        //     //         // use credentials from parameters.
-        //     //         sshagent(credentials: ['p2-site-updates']) {
+            steps ('Upload repository to server and clear tmp folder.') {
+                script {
+                    // use credentials from parameters.
+                    sshagent(credentials: ['p2-site-updates']) {
 
-        //     //             sh """
-        //     //             ssh-keyscan $destServer >> ~/.ssh/known_hosts
-        //     //             scp -r $WORKSPACE/tmp/* $sshUsername@$destServer:/data/update-sites/mirrors/
-        //     //             rm -rf $WORKSPACE/tmp/*
-        //     //             """
-        //     //         }
-        //     //     }
-        //     // }
-        // }
+                        sh """
+                        ssh-keyscan $destServer >> ~/.ssh/known_hosts
+                        scp -r $WORKSPACE/tmp/* $sshUsername@$destServer:/data/update-sites/mirrors/
+                        rm -rf $WORKSPACE/tmp/*
+                        """
+                    }
+                }
+            }
+        }
     }
 }
